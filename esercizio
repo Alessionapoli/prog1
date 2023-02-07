@@ -1,0 +1,214 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+#include <typeinfo>
+#define DIM 25
+using namespace std;
+
+class AbstractRandomVec
+{
+protected:
+    int **mat;
+    int rows;
+    int cols;
+
+public:
+    AbstractRandomVec(int n, int m, int min, int max)
+    {
+        rows = n;
+        cols = m;
+        mat = new int *[n];
+        for (int i = 0; i < n; i++)
+        {
+            mat[i] = new int[m];
+            for (int j = 0; j < m; j++)
+            {
+                mat[i][j] = rand() % (max - min + 1) + min;
+            }
+        }
+    }
+    virtual int count() = 0;
+    int *get(int i, int j)
+    {
+        if (i < 0 || i > rows || j < 0 || j > cols)
+        {
+            return nullptr;
+        }
+        else
+        {
+            return &mat[i][j];
+        }
+    }
+    int numel()
+    {
+        return cols * rows;
+    }
+    float mean()
+    {
+        int somma = 0;
+        int c = 0;
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                somma += mat[i][j];
+                c++;
+            }
+        }
+        return (double)somma / c;
+    }
+
+    virtual ostream &put(ostream &os)
+    {
+        os << typeid(*this).name() << ", rows=" << rows << ", cols=" << cols << ", mat=[";
+        for (int i = 0; i < rows; i++)
+        {
+            os << "[";
+            for (int j = 0; j < cols; j++)
+            {
+                os << mat[i][j] << " ";
+            }
+            os << "]";
+        }
+
+        return os;
+    }
+};
+
+ostream &operator<<(ostream &os, AbstractRandomVec &obj)
+{
+    return obj.put(os);
+}
+class BinaryMat : public AbstractRandomVec
+{
+
+public:
+    BinaryMat(int n, int m) : AbstractRandomVec(n, m, 0, 1) {}
+    int count()
+    {
+        int c = 0;
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                if (mat[i][j] != 0)
+                {
+                    c++;
+                }
+            }
+        }
+        return c;
+    }
+    ostream &put(ostream &os)
+    {
+        AbstractRandomVec::put(os);
+
+        
+
+        return os;
+    }
+};
+
+class EvenMat : public AbstractRandomVec
+{
+private:
+    double midpoint;
+
+public:
+    EvenMat(int n, int m, int min, int max) : AbstractRandomVec(n, m, min, max)
+    {
+        midpoint = (min + max) / 2;
+        int temp = 0;
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < m; j++)
+            {
+                do
+                {
+                    temp = rand() % (max - min + 1) + min;
+                } while (temp % 2 == 0);
+            }
+        }
+    }
+    int count()
+    {
+        int c = 0;
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                if (mat[i][j] > midpoint)
+                {
+                    c++;
+                }
+            }
+        }
+        return c;
+    }
+    int countMul(int num)
+    {
+        int c = 0;
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                if (mat[i][j] % num == 0)
+                {
+                    c++;
+                }
+            }
+        }
+        return c;
+    }
+
+    ostream &put(ostream &os)
+    {
+        AbstractRandomVec::put(os);
+
+        os << ", midpoint=" << midpoint;
+
+        return os;
+    }
+};
+
+int main()
+{
+    srand(424242);
+    AbstractRandomVec *vett[DIM];
+    for (int i = 0; i < DIM; i++)
+    {
+        int n = 5 + rand() % 5;
+        int m = 5 + rand() % 5;
+        int min = rand() % 10 + 5;
+        int max = min + rand() % 20;
+        switch (rand() % 2)
+        {
+        case 0:
+            vett[i] = new BinaryMat(n, m);
+            break;
+        case 1:
+            vett[i] = new EvenMat(n, m, min, max);
+        }
+    }
+    for(int i=0; i<DIM; i++){
+        cout<<i<<")"<<*vett[i]<<endl;
+    }
+    //punto 2
+    int max=0;
+    for(int i=0; i<DIM; i++){
+        if(max<vett[i]->count()){
+            max=vett[i]->count();
+        }
+    }
+    cout<<" max= "<<max;
+    //punto 3
+    double media=0;
+    
+    for(int i=0; i<DIM; i++){
+        if(typeid(vett[i])==typeid(EvenMat)){
+            media+=dynamic_cast<EvenMat *>(vett[i])->countMul(4);  
+        }
+    }
+    cout<<", MEDIA="<<media/DIM;
+}
